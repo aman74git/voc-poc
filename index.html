@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TATA AIG VOC Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 30px;
+            position: relative;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(0);
+        }
+
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 380px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+            border-left: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 30px;
+            z-index: 20;
+            transition: right 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .side-panel.open {
+            right: 0;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .panel-title {
+            font-size: 1.8rem;
+            color: #1E40AF;
+            font-weight: 700;
+        }
+
+        .panel-close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #6B7280;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .panel-close-btn:hover {
+            color: #EF4444;
+        }
+
+        .panel-content {
+            list-style: none;
+        }
+
+        .panel-content li {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            background: #f9fafb;
+            margin-bottom: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: #1f2937;
+            line-height: 1.3;
+            flex-wrap: wrap;
+            /* allow multiline text */
+            transition: background 0.2s ease;
+        }
+
+        .panel-content li:hover {
+            background: #eef2ff;
+        }
+
+        .panel-content li strong {
+            font-weight: 600;
+            color: #111827;
+            flex: 1 1 75%;
+            white-space: normal;
+            /* ✅ allows wrapping */
+            word-break: break-word;
+            /* ✅ handles long names gracefully */
+        }
+
+        .panel-content li span {
+            font-weight: 700;
+            color: #1e40af;
+            text-align: right;
+            flex: 0 0 auto;
+            margin-left: auto;
+            min-width: 50px;
+        }
+
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .dashboard-title {
+            font-size: 3.5rem;
+            color: #1E40AF;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        .section-header {
+            font-size: 1.3rem;
+            color: #1F2937;
+            margin-bottom: 25px;
+            font-weight: 600;
+            text-align: left;
+            border-bottom: 3px solid #1E40AF;
+            padding-bottom: 12px;
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+
+        .row {
+            display: grid;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .row-1 {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto;
+        }
+
+        .row-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .row-3 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .row-4 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .clickable-card {
+            cursor: pointer;
+        }
+
+        .clickable-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .kpi-card {
+            text-align: center;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 5px solid;
+            position: relative;
+        }
+
+        .kpi-card.positive {
+            border-left-color: #10B981;
+        }
+
+        .kpi-card.warning {
+            border-left-color: #F59E0B;
+        }
+
+        .kpi-card.info {
+            border-left-color: #1E40AF;
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #1F2937;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .kpi-label {
+            font-size: 0.8rem;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .kpi-breakdown {
+            font-size: 0.7rem;
+            color: #6B7280;
+            margin-top: 4px;
+            line-height: 1.1;
+        }
+
+        .volume-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .volume-chart-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .volume-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .volume-center-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #1F2937;
+            line-height: 1;
+        }
+
+        .volume-center-label {
+            font-size: 0.7rem;
+            color: #6B7280;
+            margin-top: 2px;
+        }
+
+        .big-card {
+            grid-column: 1 / -1;
+            min-height: 350px;
+        }
+
+        .qrc-overview {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            height: 'fit-content';
+        }
+
+        .qrc-category-section {
+            background: rgba(248, 250, 252, 0.8);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .qrc-category-section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .qrc-category-title {
+            text-align: center;
+            background: linear-gradient(135deg, #1E40AF, #3B82F6);
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .qrc-type-section {
+            margin-bottom: 10px;
+        }
+
+        .qrc-type-header {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .queries-header {
+            background: linear-gradient(135deg, #3B82F6, #1E40AF);
+        }
+
+        .requests-header {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .complaints-header {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+        }
+
+        .qrc-subcategory {
+            font-size: 0.65rem;
+            color: #374151;
+            padding: 1px 4px;
+            margin-bottom: 1px;
+            border-left: 2px solid #E5E7EB;
+            padding-left: 4px;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chart-title {
+            font-size: 1.4rem;
+            color: #1F2937;
+            margin-bottom: 20px;
+            font-weight: 600;
+            border-left: 4px solid #1E40AF;
+            padding-left: 15px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+        }
+
+        .chart-wrapper.short {
+            height: 250px;
+        }
+
+        /* New styles for expansion */
+        .chart-wrapper.expanded {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .chart-expand-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 12px;
+            background: #1E40AF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(30, 64, 175, 0.2);
+            z-index: 10;
+        }
+
+        .chart-expand-btn:hover {
+            background: #1c3d9a;
+            transform: scale(1.05);
+        }
+
+        .chart-contract-btn {
+            background: #EF4444;
+        }
+
+        .source-section {
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            position: relative;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .source-title {
+            font-size: 1.2rem;
+            color: #1F2937;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nps-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .nps-segment {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nps-segment:hover {
+            transform: scale(1.05);
+        }
+
+        .nps-segment.active {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .promoter {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .passive {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+        }
+
+        .detractor {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+        }
+
+        .sentiment-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .sentiment-card {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sentiment-card:hover {
+            transform: scale(1.05);
+        }
+
+        .sentiment-card.active {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .lob-sentiment-card {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lob-sentiment-card:hover {
+            transform: scale(1.05);
+        }
+
+        .lob-sentiment-card.active {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .positive-sent {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .neutral-sent {
+            background: linear-gradient(135deg, #3B82F6, #1E40AF);
+        }
+
+        .negative-sent {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+        }
+
+        .qrc-breakdown {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .qrc-card {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .qrc-card:hover {
+            transform: scale(1.05);
+        }
+
+        .qrc-card.active {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .queries {
+            background: linear-gradient(135deg, #3B82F6, #1E40AF);
+        }
+
+        .requests {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+
+        .complaints {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+        }
+
+        .er {
+            background: linear-gradient(135deg, #795757, #fb0000);
+        }
+
+        /* Tooltip Styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .chart-toggle-btn {
+            margin-top: 10px;
+            background: #1E40AF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .chart-toggle-btn:hover {
+            background: #1c3d9a;
+            transform: scale(1.05);
+        }
+
+        .dropdown-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+
+        /* 🔹 Label styling */
+        .dropdown-label {
+            font-weight: 500;
+            color: var(--text-primary, #333);
+            font-size: 0.95rem;
+        }
+
+        /* 🔹 Base dropdown styling */
+        .dropdown {
+            appearance: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(200, 200, 200, 0.4);
+            background: rgba(255, 255, 255, 0.25);
+            color: var(--text-primary, #333);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: all 0.2s ease;
+        }
+
+        /* Hover & focus states */
+        .dropdown:hover {
+            border-color: rgba(150, 150, 150, 0.6);
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .dropdown:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 4px rgba(74, 144, 226, 0.4);
+        }
+
+        @media (max-width: 1400px) {
+            .row-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .qrc-overview {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .row-1 {
+                grid-template-columns: 1fr;
+            }
+
+            .row-3,
+            .row-4 {
+                grid-template-columns: 1fr;
+            }
+
+            .qrc-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 20px;
+            }
+
+            .dashboard-title {
+                font-size: 2.5rem;
+            }
+
+            .kpi-value {
+                font-size: 1.4rem;
+            }
+
+            .qrc-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-container {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container" id="dashboardContainer">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">TATA AIG VOC</h1>
+            <div class="filter-container">
+                <span class="filter-label">Filter:</span>
+                <select class="filter-select" id="mainFilter">
+                    <option value="all">All</option>
+                    <option value="fy25">FY'25</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <select class="filter-select" id="monthFilter" disabled>
+                    <option value="">Select Month(s)</option>
+                    <option value="april">April</option>
+                    <option value="may">May</option>
+                    <option value="june">June</option>
+                    <option value="april-may">April-May</option>
+                    <option value="may-june">May-June</option>
+                    <option value="april-june">April-June</option>
+                </select>
+            </div>
+        </div>
+
+        <h2 class="section-header">Quick Glance - Consolidated KPIs</h2>
+        <div class="row row-1">
+            <div class="glass-card kpi-card positive clickable-card" id="sentimentCard">
+                <div class="kpi-value">18% | 28% | 54%</div>
+                <div class="kpi-label">Sentiment Split</div>
+                <div class="kpi-breakdown">Positive | Neutral | Negative</div>
+            </div>
+
+            <div class="glass-card kpi-card info volume-card clickable-card" id="volumeCard">
+                <div class="volume-chart-container">
+                    <canvas id="volumeMiniChart" width="140" height="140"></canvas>
+                    <div class="volume-center-text">
+                        <div class="volume-center-value">67,400</div>
+                        <div class="volume-center-label">Total Volume</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card warning clickable-card" id="npsCard">
+                <div class="kpi-value">+25</div>
+                <div class="kpi-label">Overall NPS Score</div>
+                <div class="kpi-breakdown" id="npsBreakdown"></div>
+            </div>
+
+            <div class="glass-card kpi-card info clickable-card" id="activePolicyCard">
+                <div class="kpi-value">30.3%</div>
+                <div class="kpi-label">Active Policies vs -ve Volume</div>
+                <div class="kpi-breakdown">Negative Volume / Active Policies</div>
+            </div>
+
+            <div class="glass-card big-card">
+                <h3 style="color: #1F2937; font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Top 5 VOC -
+                    Request/Complaint Breakdown</h3>
+                <div class="qrc-overview">
+                    <div class="qrc-category-section">
+                        <div class="qrc-category-title">Policy Related</div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header requests-header">Requests</div>
+                            <div class="qrc-subcategory"><span>Policy Copy</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>NCB Letter</span><span>12</span></div>
+                            <div class="qrc-subcategory"><span>Tax Certificate</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Renewal Notice</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Health Card</span><span>8</span></div>
+                        </div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header complaints-header">Complaints</div>
+                            <div class="qrc-subcategory"><span>Incomplete Docs</span><span>12</span></div>
+                            <div class="qrc-subcategory"><span>DNC Issues</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Agent Problems</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Portal Access</span><span>8</span></div>
+                            <div class="qrc-subcategory"><span>Producer Code</span><span>7</span></div>
+                        </div>
+                    </div>
+
+                    <div class="qrc-category-section">
+                        <div class="qrc-category-title">Claim Related</div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header requests-header">Requests</div>
+                            <div class="qrc-subcategory"><span>Claim Intimation</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Doc Submission</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Surveyor Info</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Reimbursement</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Claim ID Gen</span><span>8</span></div>
+                        </div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header complaints-header">Complaints</div>
+                            <div class="qrc-subcategory"><span>Settlement Delay</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Claim Rejection</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Surveyor Delay</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Poor Behavior</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Amount Dispute</span><span>8</span></div>
+                        </div>
+                    </div>
+
+                    <div class="qrc-category-section">
+                        <div class="qrc-category-title">Service Related</div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header requests-header">Requests</div>
+                            <div class="qrc-subcategory"><span>Branch Visit</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Executive Meet</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Home Service</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Callback Req</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Email Support</span><span>8</span></div>
+                        </div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header complaints-header">Complaints</div>
+                            <div class="qrc-subcategory"><span>Rude Behavior</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>No Response</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Wrong Info</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Delayed Service</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Unprofessional</span><span>8</span></div>
+                        </div>
+                    </div>
+
+                    <div class="qrc-category-section">
+                        <div class="qrc-category-title">Renewal Related</div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header requests-header">Requests</div>
+                            <div class="qrc-subcategory"><span>Payment Link</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Renewal Notice</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>SI Upgrade</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Add Coverage</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Auto Debit</span><span>8</span></div>
+                        </div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header complaints-header">Complaints</div>
+                            <div class="qrc-subcategory"><span>Payment Issues</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Notice Delay</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Premium Hike</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Link Error</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Process Delay</span><span>8</span></div>
+                        </div>
+                    </div>
+
+                    <div class="qrc-category-section">
+                        <div class="qrc-category-title">Endorsement Related</div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header requests-header">Requests</div>
+                            <div class="qrc-subcategory"><span>Name Change</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Address Update</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Contact Change</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>Beneficiary</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Vehicle Details</span><span>8</span></div>
+                        </div>
+                        <div class="qrc-type-section">
+                            <div class="qrc-type-header complaints-header">Complaints</div>
+                            <div class="qrc-subcategory"><span>Process Delay</span><span>20</span></div>
+                            <div class="qrc-subcategory"><span>Doc Issues</span><span>15</span></div>
+                            <div class="qrc-subcategory"><span>Wrong Changes</span><span>10</span></div>
+                            <div class="qrc-subcategory"><span>High Charges</span><span>9</span></div>
+                            <div class="qrc-subcategory"><span>Rejection</span><span>8</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-header">Sentiment Analysis</h2>
+        <div class="row row-3">
+            <div class="glass-card clickable-card"
+                onclick="toggleExpand('sentimentSection', 'sentimentLineChart', 'Monthly Sentiment Trends')">
+                <h3 class="chart-title">Monthly Sentiment Trends</h3>
+                <div class="chart-wrapper">
+                    <canvas id="sentimentLineChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card source-section" id="sentimentSection">
+                <h3 class="source-title">😊 Sentiment Bifurcation</h3>
+                <div class="sentiment-breakdown">
+                    <div class="sentiment-card positive-sent active" onclick="updateSentimentChart('positive')">
+                        <div>18%</div>
+                        <div>Positive</div>
+                    </div>
+                    <div class="sentiment-card neutral-sent" onclick="updateSentimentChart('neutral')">
+                        <div>28%</div>
+                        <div>Neutral</div>
+                    </div>
+                    <div class="sentiment-card negative-sent" onclick="updateSentimentChart('negative')">
+                        <div>54%</div>
+                        <div>Negative</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper short" id="sentimentChartWrapper">
+                    <canvas id="sentimentCategoryChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="toggleExpand('sentimentChartWrapper', 'sentimentCategoryChart', 'Sentiment Bifurcation')">Expand</button>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-header">Cross-Source Drivers</h2>
+        <div class="row row-3">
+            <div class="glass-card">
+                <h3 class="chart-title">Top 5 Negativity Drivers (Count Based)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="negativityDriversChart"></canvas>
+                </div>
+                <button class="chart-toggle-btn" data-chart="negativityDriversChart"
+                    onclick="togglePreviousNegativityDrivers()">
+                    View Previous Data
+                </button>
+            </div>
+            <div class="glass-card">
+                <h3 class="chart-title">Top 5 Positivity Drivers (Count Based)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="positivityDriversChart"></canvas>
+                </div>
+                <button class="chart-toggle-btn" data-chart="positivityDriversChart"
+                    onclick="togglePreviousPositivityDrivers()">
+                    View Previous Data
+                </button>
+            </div>
+        </div>
+
+        <h2 class="section-header">Source-Specific Insights</h2>
+        <div class="row row-4">
+            <div class="glass-card source-section" id="npsSection">
+                <h3 class="source-title">📊 NPS Insights</h3>
+                <div class="nps-breakdown">
+                    <div class="nps-segment promoter" onclick="updateNPSChart('promoter')">
+                        <div>28%</div>
+                        <div>Promoters</div>
+                    </div>
+                    <div class="nps-segment passive" onclick="updateNPSChart('passive')">
+                        <div>69%</div>
+                        <div>Passive</div>
+                    </div>
+                    <div class="nps-segment detractor active" onclick="updateNPSChart('detractor')">
+                        <div>3%</div>
+                        <div>Detractors</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper short" id="npsChartWrapper">
+                    <canvas id="npsCategoryChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="toggleExpand('npsChartWrapper', 'npsCategoryChart', 'NPS Insights')">Expand</button>
+                </div>
+            </div>
+
+            <div class="glass-card source-section" id="qrcSection">
+                <h3 class="source-title">🎫 QRC Bifurcation</h3>
+                <div class="qrc-breakdown">
+                    <div class="qrc-card queries active" onclick="updateQRCChart('queries')">
+                        <div>45%</div>
+                        <div>Queries</div>
+                    </div>
+                    <div class="qrc-card requests" onclick="updateQRCChart('requests')">
+                        <div>23%</div>
+                        <div>Requests</div>
+                    </div>
+                    <div class="qrc-card complaints" onclick="updateQRCChart('complaints')">
+                        <div>20%</div>
+                        <div>Complaints</div>
+                    </div>
+                    <div class="qrc-card er" onclick="updateQRCChart('complaints')">
+                        <div>12%</div>
+                        <div>ER</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper short" id="qrcChartWrapper">
+                    <canvas id="qrcCategoryChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="toggleExpand('qrcChartWrapper', 'qrcCategoryChart', 'Complaint Bifurcation')">Expand</button>
+                </div>
+            </div>
+
+            <div class="glass-card source-section" id="socialSection">
+                <h3 class="source-title">📱 Social Media</h3>
+                <div class="chart-wrapper short" id="socialChartWrapper">
+                    <canvas id="socialCategoryChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="toggleExpand('socialChartWrapper', 'socialCategoryChart', 'Social Media')">Expand</button>
+                </div>
+            </div>
+        </div>
+        <div class="row row-4">
+            <div class="glass-card source-section" id="lobSentimentSection">
+                <h3 class="source-title">LOB sentiment Bifurcation</h3>
+                <div class="dropdown-container">
+                    <label for="lobDropdown" class="dropdown-label">LOB:</label>
+                    <select id="lobDropdown" class="dropdown" onchange="updateLOBSentimentByLOB(this.value)">
+                        <option value="health">Health</option>
+                        <option value="health">Motor</option>
+                        <option value="travel">Travel</option>
+                    </select>
+                </div>
+                <div class="sentiment-breakdown">
+                    <div class="lob-sentiment-card positive-sent active" onclick="updateLOBSentimentChart('positive')">
+                        <div>22%</div>
+                        <div>Positive</div>
+                    </div>
+                    <div class="lob-sentiment-card neutral-sent" onclick="updateLOBSentimentChart('neutral')">
+                        <div>31%</div>
+                        <div>Neutral</div>
+                    </div>
+                    <div class="lob-sentiment-card negative-sent" onclick="updateLOBSentimentChart('negative')">
+                        <div>47%</div>
+                        <div>Negative</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper short" id="lobSentimentChartWrapper">
+                    <canvas id="lobSentimentCategoryChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="toggleExpand('lobSentimentChartWrapper', 'lobSentimentCategoryChart', 'LOB Sentiment Bifurcation')">Expand</button>
+                </div>
+                <button class="chart-toggle-btn" data-chart="lobSentimentCategoryChart"
+                    onclick="togglePreviousLOBSentimentChart()">
+                    View Previous Data
+                </button>
+            </div>
+            <div class="glass-card source-section" id="insuranceSentimentSection">
+                <h3 class="source-title">Insurance Channel Sentiment Bifurcation</h3>
+                <div class="dropdown-container">
+                    <label for="insuranceChannelDropdown" class="dropdown-label">Channel:</label>
+                    <select id="insuranceChannelDropdown" class="dropdown"
+                        onchange="updateInsuranceSentimentByChannel(this.value)">
+                        <option value="agency">Agency</option>
+                        <option value="banca">Banca</option>
+                        <option value="broker">Broker</option>
+                    </select>
+                </div>
+                <div class="sentiment-breakdown">
+                    <div class="lob-sentiment-card positive-sent active"
+                        onclick="updateInsuranceSentimentChart('positive')">
+                        <div>20%</div>
+                        <div>Positive</div>
+                    </div>
+                    <div class="lob-sentiment-card neutral-sent" onclick="updateInsuranceSentimentChart('neutral')">
+                        <div>30%</div>
+                        <div>Neutral</div>
+                    </div>
+                    <div class="lob-sentiment-card negative-sent" onclick="updateInsuranceSentimentChart('negative')">
+                        <div>50%</div>
+                        <div>Negative</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper short" id="insuranceSentimentChartWrapper">
+                    <canvas id="insuranceSentimentCategoryChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="toggleExpand('insuranceSentimentChartWrapper', 'insuranceSentimentCategoryChart', 'Insurance Sentiment Bifurcation')">Expand</button>
+                </div>
+                <button class="chart-toggle-btn" data-chart="insuranceSentimentCategoryChart"
+                    onclick="togglePreviousInsuranceSentimentChart()">
+                    View Previous Data
+                </button>
+            </div>
+            <div class="glass-card source-section" id="channelTrendSection">
+                <h3 class="source-title">Channel-wise Sales vs Negative Volume</h3>
+                <div class="dropdown-container">
+                    <label for="channelTrendDropdown" class="dropdown-label">Channel:</label>
+                    <select id="channelTrendDropdown" class="dropdown" onchange="updateChannelTrendChart(this.value)">
+                        <option value="agency">Agency</option>
+                        <option value="banca">Bancassurance</option>
+                        <option value="broker">Broker</option>
+                        <option value="direct">Direct</option>
+                        <option value="web">Web</option>
+                        <option value="aggregator">Aggregator</option>
+                        <option value="oem">OEM</option>
+                        <option value="posp">POSP</option>
+                    </select>
+                </div>
+                <div class="chart-wrapper" id="channelTrendWrapper">
+                    <canvas id="channelTrendLineChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card source-section" id="insuranceBifurcationSection">
+                <h3 class="source-title">Insurance Channel Bifurcation</h3>
+
+                <div class="sentiment-breakdown">
+                    <div class="lob-sentiment-card positive-sent active"
+                        onclick="updateInsuranceBifurcationChart('positive')">
+                        <div>25%</div>
+                        <div>Positive</div>
+                    </div>
+                    <div class="lob-sentiment-card neutral-sent" onclick="updateInsuranceBifurcationChart('neutral')">
+                        <div>45%</div>
+                        <div>Neutral</div>
+                    </div>
+                    <div class="lob-sentiment-card negative-sent" onclick="updateInsuranceBifurcationChart('negative')">
+                        <div>30%</div>
+                        <div>Negative</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper short" id="insuranceBifurcationChartWrapper">
+                    <canvas id="insuranceBifurcationCategoryChart"></canvas>
+                </div>
+                <button class="chart-toggle-btn" data-chart="insuranceBifurcationCategoryChart"
+                    onclick="togglePreviousInsuranceBifurcationChart()">
+                    View Previous Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <div class="side-panel" id="sidePanel">
+        <div class="panel-header">
+            <h3 class="panel-title" id="panelTitle">Subcategories</h3>
+            <button class="panel-close-btn" onclick="closeSidePanel()">&times;</button>
+        </div>
+        <ul class="panel-content" id="panelContent">
+        </ul>
+    </div>
+
+    <script>
+        // Configure Chart.js defaults
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+
+        // Global variables
+        let volumeMiniChart, sentimentLineChart, negativityDriversChart, positivityDriversChart;
+        let npsCategoryChart, sentimentCategoryChart, qrcCategoryChart, socialCategoryChart, lobSentimentCategoryChart, insuranceSentimentCategoryChart, insuranceBifurcationCategoryChart, channelTrendLineChart;
+        let currentNPSData, currentSentimentData, currentQRCData, currentLOBSentimentData, currentInsuranceSentimentData, currentInsuranceBifurcationSentimentData;
+        let expandedChartId = null;
+
+        // New, more detailed data structure based on user input
+        // const categorySubcategoryData = {
+        //     'Printing and Dispatch Related': ['Policy Soft Copy(Barring Self Service Avenues)', 'Renewal Notice - Soft Copy', 'Policy Hard Copy - current year', 'NCB confirmation - Soft Copy', 'Endorsement Letter Not Received', 'NCB reserving letter- Hard Copy', 'Health Card- Hard Copy', 'Dispatch Status', 'Health Card- Soft Copy', 'Tax benefit letter'],
+        //     'Endorsement Related': ['Add/Del Of Hypothecation', 'Change in Salutation/Gender', 'Change of Address (Communication)', 'Change of Beneficiary / nominee details', 'Change Of vehicle details', 'Change/Correction of contact details', 'Name Correction ( Not transfer of ownership)', 'Change In Policy Period', 'Change / correction in passport number'],
+        //     'Service Related': ['Branch Location', 'Hospital Location', 'Garage Location', 'Company officials Related'],
+        //     'Claim Related': ['Incomplete Document/Details', 'Delay In Settlement', 'Withdrawal Of Claim', 'Claim ID Not Generated', 'Delay in Appointment of Surveyor', 'Unhappy with behaviour of Surveyor/Investigator', 'Re-Open Claim', 'Informed pending document for claims', 'Document / report given during intimation not returned', 'Claim amount not received', 'Claim not registered - incomplete information', 'Claim Status', 'Claim Process', 'Intimation of a claim', 'Dispute on Claim Settlement / Assessment'],
+        //     'Cancellation Related': ['Post policy Issuance Cancellation', 'Incomplete Document/Details', 'Pre Issuance Policy Cancellation', 'Cancellation Process', 'Cancellation Status- Customer intiated', 'Cancellation Status- Company intiated', 'Hold cancellation Request', 'Cancellation Not Done post Request', 'Misselling /Debit without Concern'],
+        //     'Policy Related': ['Incomplete Document/Details', 'Status / Policy Exclusions & Coverage\'s', 'DNC', 'Unable to view T/P policy Vahan Check', 'Producer Code Change', 'Agent/Producer Service Related', 'Voice Log / Cd Required', 'RSA information given', 'Digilocker - Unable to add Policy', 'NCB', 'Producer Details', 'Unhappy with RSA vendor', 'IDV / Sum insured', 'Add On Details', 'Customer Pendency - Document Not Received'],
+        //     'Policy Issuance': ['Premium Debited Online / Pay Now', 'Policy Issuance Status', 'Unable to view policy in GC', 'Pendency submitted - COL / add info letter / shortfall', 'Cheque Paid', 'Payment to Agent/Producer/OEM'],
+        //     'Lead & Product Related': ['Wants to Buy a New Policy', 'Information on Products'],
+        //     'Renewal Related': ['Renewal Payment Link Shared', 'Renewal clarification', 'Addition / Deletion Of Coverage', 'Renewal Notice Not Generated', 'Renewal Payment link error', 'Clarification on Migration', 'Inspection + Pay Now', 'Revised Renewal Notice generation', 'Product Migration / Withdrawal', 'Auto Debit Opt Out', 'Sum Insured Upgrade', 'Renewal Declined', 'Canara Bank Premium Increase', 'Renewal Link Sending Failed', 'Third Party Coverage', 'NEFT'],
+        //     'Website & Portal Related': ['Website Error - Others', 'Unable to add/link Policy', 'Login Error', 'Navigation of Website', 'Details Not Available on Portal'],
+        //     'Refund Related': ['Refund amount not received', 'Incomplete Document/Details', 'Excess Premium Not Refunded', 'Refund Status', 'Double debit refund not received', 'Dispute of premium refund', 'UTR / Refund details', 'Unclaimed Amount Related'],
+        //     'Re-activation': ['Post Grace Period Renewal', 'Cancelled due to other reasons', 'Incomplete Document/Details', 'Re-activation Status', 'Customer Cheque Bounce', 'Claim After Quote Case', 'Agent Cheque Bounce', 'Chargeback'],
+        //     'Mis-selling/Sales Related': ['Incorrect policy issued', 'Policy issued Without Consent', 'Incorrect Product Features Communicated', 'Misleading advertisement', 'Mis-Selling Status', 'Add-on not included', 'Portablity benefit not given', 'Fraud Case', 'Claim denied due to non-disclosure of facts', 'Signature mismatch on proposal form'],
+        //     'Feedback and Compliment': ['Appreciation / Thankyou', 'Customer Expirence Related', 'agent / producer Related', 'Portal / Website /App'],
+        //     'Health Claim Related': ['Dispute on claim settlement / assessment', 'Delay In Settlement', 'Withdrawal Of Claim', 'Claim ID Not Generated', 'Re-Open Claim', 'Document / report given during intimation not returned', 'Claim amount not received']
+        // };
+
+
+        // New, more detailed data structure with randomized counts
+        const categorySubcategoryData = {
+            'Printing and Dispatch Related': [
+                { name: 'Policy Soft Copy(Barring Self Service Avenues)', count: 540 },
+                { name: 'Renewal Notice - Soft Copy', count: 480 },
+                { name: 'Policy Hard Copy - current year', count: 460 },
+                { name: 'NCB confirmation - Soft Copy', count: 430 },
+                { name: 'Endorsement Letter Not Received', count: 390 },
+                { name: 'NCB reserving letter- Hard Copy', count: 370 },
+                { name: 'Health Card- Hard Copy', count: 340 },
+                { name: 'Dispatch Status', count: 300 },
+                { name: 'Health Card- Soft Copy', count: 270 },
+                { name: 'Tax benefit letter', count: 230 }
+            ],
+            'Endorsement Related': [
+                { name: 'Add/Del Of Hypothecation', count: 510 },
+                { name: 'Change in Salutation/Gender', count: 470 },
+                { name: 'Change of Address (Communication)', count: 460 },
+                { name: 'Change of Beneficiary / nominee details', count: 420 },
+                { name: 'Change Of vehicle details', count: 390 },
+                { name: 'Change/Correction of contact details', count: 370 },
+                { name: 'Name Correction ( Not transfer of ownership)', count: 350 },
+                { name: 'Change In Policy Period', count: 320 },
+                { name: 'Change / correction in passport number', count: 300 }
+            ],
+            'Service Related': [
+                { name: 'Branch Location', count: 480 },
+                { name: 'Hospital Location', count: 420 },
+                { name: 'Garage Location', count: 370 },
+                { name: 'Company officials Related', count: 330 }
+            ],
+            'Claim Related': [
+                { name: 'Incomplete Document/Details', count: 780 },
+                { name: 'Delay In Settlement', count: 740 },
+                { name: 'Withdrawal Of Claim', count: 680 },
+                { name: 'Claim ID Not Generated', count: 620 },
+                { name: 'Delay in Appointment of Surveyor', count: 580 },
+                { name: 'Unhappy with behaviour of Surveyor/Investigator', count: 540 },
+                { name: 'Re-Open Claim', count: 520 },
+                { name: 'Informed pending document for claims', count: 480 },
+                { name: 'Document / report given during intimation not returned', count: 440 },
+                { name: 'Claim amount not received', count: 400 },
+                { name: 'Claim not registered - incomplete information', count: 370 },
+                { name: 'Claim Status', count: 340 },
+                { name: 'Claim Process', count: 300 },
+                { name: 'Intimation of a claim', count: 280 },
+                { name: 'Dispute on Claim Settlement / Assessment', count: 260 }
+            ],
+            'Cancellation Related': [
+                { name: 'Post policy Issuance Cancellation', count: 460 },
+                { name: 'Incomplete Document/Details', count: 430 },
+                { name: 'Pre Issuance Policy Cancellation', count: 400 },
+                { name: 'Cancellation Process', count: 370 },
+                { name: 'Cancellation Status- Customer intiated', count: 350 },
+                { name: 'Cancellation Status- Company intiated', count: 330 },
+                { name: 'Hold cancellation Request', count: 310 },
+                { name: 'Cancellation Not Done post Request', count: 290 },
+                { name: 'Misselling /Debit without Concern', count: 250 }
+            ],
+            'Policy Related': [
+                { name: 'Incomplete Document/Details', count: 610 },
+                { name: 'Status / Policy Exclusions & Coverage\'s', count: 580 },
+                { name: 'DNC', count: 540 },
+                { name: 'Unable to view T/P policy Vahan Check', count: 510 },
+                { name: 'Producer Code Change', count: 480 },
+                { name: 'Agent/Producer Service Related', count: 450 },
+                { name: 'Voice Log / Cd Required', count: 430 },
+                { name: 'RSA information given', count: 410 },
+                { name: 'Digilocker - Unable to add Policy', count: 380 },
+                { name: 'NCB', count: 360 },
+                { name: 'Producer Details', count: 340 },
+                { name: 'Unhappy with RSA vendor', count: 320 },
+                { name: 'IDV / Sum insured', count: 300 },
+                { name: 'Add On Details', count: 280 },
+                { name: 'Customer Pendency - Document Not Received', count: 260 }
+            ],
+            'Policy Issuance': [
+                { name: 'Premium Debited Online / Pay Now', count: 420 },
+                { name: 'Policy Issuance Status', count: 400 },
+                { name: 'Unable to view policy in GC', count: 370 },
+                { name: 'Pendency submitted - COL / add info letter / shortfall', count: 340 },
+                { name: 'Cheque Paid', count: 310 },
+                { name: 'Payment to Agent/Producer/OEM', count: 280 }
+            ],
+            'Lead & Product Related': [
+                { name: 'Wants to Buy a New Policy', count: 260 },
+                { name: 'Information on Products', count: 240 }
+            ],
+            'Renewal Related': [
+                { name: 'Renewal Payment Link Shared', count: 580 },
+                { name: 'Renewal clarification', count: 540 },
+                { name: 'Addition / Deletion Of Coverage', count: 510 },
+                { name: 'Renewal Notice Not Generated', count: 480 },
+                { name: 'Renewal Payment link error', count: 450 },
+                { name: 'Clarification on Migration', count: 420 },
+                { name: 'Inspection + Pay Now', count: 400 },
+                { name: 'Revised Renewal Notice generation', count: 370 },
+                { name: 'Product Migration / Withdrawal', count: 340 },
+                { name: 'Auto Debit Opt Out', count: 320 },
+                { name: 'Sum Insured Upgrade', count: 300 },
+                { name: 'Renewal Declined', count: 280 },
+                { name: 'Canara Bank Premium Increase', count: 260 },
+                { name: 'Renewal Link Sending Failed', count: 240 },
+                { name: 'Third Party Coverage', count: 220 },
+                { name: 'NEFT', count: 200 }
+            ],
+            'Website & Portal Related': [
+                { name: 'Website Error - Others', count: 410 },
+                { name: 'Unable to add/link Policy', count: 380 },
+                { name: 'Login Error', count: 350 },
+                { name: 'Navigation of Website', count: 330 },
+                { name: 'Details Not Available on Portal', count: 310 }
+            ],
+            'Refund Related': [
+                { name: 'Refund amount not received', count: 470 },
+                { name: 'Incomplete Document/Details', count: 440 },
+                { name: 'Excess Premium Not Refunded', count: 410 },
+                { name: 'Refund Status', count: 380 },
+                { name: 'Double debit refund not received', count: 350 },
+                { name: 'Dispute of premium refund', count: 320 },
+                { name: 'UTR / Refund details', count: 300 },
+                { name: 'Unclaimed Amount Related', count: 280 }
+            ],
+            'Re-activation': [
+                { name: 'Post Grace Period Renewal', count: 400 },
+                { name: 'Cancelled due to other reasons', count: 370 },
+                { name: 'Incomplete Document/Details', count: 340 },
+                { name: 'Re-activation Status', count: 310 },
+                { name: 'Customer Cheque Bounce', count: 280 },
+                { name: 'Claim After Quote Case', count: 260 },
+                { name: 'Agent Cheque Bounce', count: 240 },
+                { name: 'Chargeback', count: 220 }
+            ],
+            'Mis-selling/Sales Related': [
+                { name: 'Incorrect policy issued', count: 490 },
+                { name: 'Policy issued Without Consent', count: 460 },
+                { name: 'Incorrect Product Features Communicated', count: 420 },
+                { name: 'Misleading advertisement', count: 390 },
+                { name: 'Mis-Selling Status', count: 360 },
+                { name: 'Add-on not included', count: 340 },
+                { name: 'Portablity benefit not given', count: 320 },
+                { name: 'Fraud Case', count: 290 },
+                { name: 'Claim denied due to non-disclosure of facts', count: 260 },
+                { name: 'Signature mismatch on proposal form', count: 240 }
+            ],
+            'Feedback and Compliment': [
+                { name: 'Appreciation / Thankyou', count: 430 },
+                { name: 'Customer Expirence Related', count: 390 },
+                { name: 'agent / producer Related', count: 360 },
+                { name: 'Portal / Website /App', count: 330 }
+            ],
+            'Health Claim Related': [
+                { name: 'Dispute on claim settlement / assessment', count: 620 },
+                { name: 'Delay In Settlement', count: 590 },
+                { name: 'Withdrawal Of Claim', count: 560 },
+                { name: 'Claim ID Not Generated', count: 520 },
+                { name: 'Re-Open Claim', count: 490 },
+                { name: 'Document / report given during intimation not returned', count: 460 },
+                { name: 'Claim amount not received', count: 430 }
+            ]
+        };
+
+        // Data for different filter selections
+        const dataSet = {
+            'all': {
+                sentiment: { positive: 18, neutral: 28, negative: 54, total: 67400 },
+                nps: { score: 25, breakdown: { promoters: 28, passives: 69, detractors: 3 } },
+                qrc: { queries: 45, requests: 23, complaints: 32 },
+                volume: { social: 42, qrc: 35, nps: 23 },
+                sentimentTrends: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    positive: [20, 22, 18, 19, 17, 18],
+                    neutral: [30, 28, 26, 27, 29, 28],
+                    negative: [50, 50, 56, 54, 54, 54]
+                }
+            },
+            'fy25': {
+                sentiment: { positive: 19, neutral: 27, negative: 54, total: 45600 },
+                nps: { score: 22, breakdown: { promoters: 25, passives: 70, detractors: 5 } },
+                qrc: { queries: 40, requests: 25, complaints: 35 },
+                volume: { social: 40, qrc: 30, nps: 30 },
+                sentimentTrends: {
+                    labels: ['Apr', 'May', 'Jun'],
+                    positive: [19, 17, 18],
+                    neutral: [27, 29, 28],
+                    negative: [54, 54, 54]
+                }
+            },
+            'april': {
+                sentiment: { positive: 19, neutral: 27, negative: 54, total: 15100 },
+                nps: { score: 23, breakdown: { promoters: 27, passives: 69, detractors: 4 } },
+                qrc: { queries: 42, requests: 24, complaints: 34 },
+                volume: { social: 41, qrc: 34, nps: 25 },
+                sentimentTrends: {
+                    labels: ['Apr'],
+                    positive: [19],
+                    neutral: [27],
+                    negative: [54]
+                }
+            },
+            'may': {
+                sentiment: { positive: 17, neutral: 29, negative: 54, total: 15300 },
+                nps: { score: 20, breakdown: { promoters: 23, passives: 72, detractors: 5 } },
+                qrc: { queries: 38, requests: 26, complaints: 36 },
+                volume: { social: 39, qrc: 32, nps: 29 },
+                sentimentTrends: {
+                    labels: ['May'],
+                    positive: [17],
+                    neutral: [29],
+                    negative: [54]
+                }
+            },
+            'june': {
+                sentiment: { positive: 18, neutral: 28, negative: 54, total: 15000 },
+                nps: { score: 25, breakdown: { promoters: 28, passives: 69, detractors: 3 } },
+                qrc: { queries: 40, requests: 25, complaints: 35 },
+                volume: { social: 40, qrc: 30, nps: 30 },
+                sentimentTrends: {
+                    labels: ['Jun'],
+                    positive: [18],
+                    neutral: [28],
+                    negative: [54]
+                }
+            },
+            'april-may': {
+                sentiment: { positive: 18, neutral: 28, negative: 54, total: 30400 },
+                nps: { score: 21.5, breakdown: { promoters: 25, passives: 70, detractors: 5 } },
+                qrc: { queries: 40, requests: 25, complaints: 35 },
+                volume: { social: 40, qrc: 33, nps: 27 },
+                sentimentTrends: {
+                    labels: ['Apr', 'May'],
+                    positive: [19, 17],
+                    neutral: [27, 29],
+                    negative: [54, 54]
+                }
+            },
+            'may-june': {
+                sentiment: { positive: 17.5, neutral: 28.5, negative: 54, total: 30300 },
+                nps: { score: 22.5, breakdown: { promoters: 25.5, passives: 70.5, detractors: 4 } },
+                qrc: { queries: 39, requests: 25.5, complaints: 35.5 },
+                volume: { social: 39.5, qrc: 31, nps: 29.5 },
+                sentimentTrends: {
+                    labels: ['May', 'Jun'],
+                    positive: [17, 18],
+                    neutral: [29, 28],
+                    negative: [54, 54]
+                }
+            },
+            'april-june': {
+                sentiment: { positive: 18, neutral: 28, negative: 54, total: 45400 },
+                nps: { score: 22, breakdown: { promoters: 25, passives: 70, detractors: 5 } },
+                qrc: { queries: 40, requests: 25, complaints: 35 },
+                volume: { social: 40, qrc: 30, nps: 30 },
+                sentimentTrends: {
+                    labels: ['Apr', 'May', 'Jun'],
+                    positive: [19, 17, 18],
+                    neutral: [27, 29, 28],
+                    negative: [54, 54, 54]
+                }
+            }
+        };
+
+        let currentFilter = 'all';
+
+        const npsData = {
+            detractor: {
+                labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Agent Behavior', 'Call Center', 'Process Delay', 'Documentation', 'Payment Issues'],
+                data: [234, 135, 45, 30, 23, 18, 15, 12, 10, 8],
+                backgroundColor: '#EF4444'
+            },
+            passive: {
+                labels: ['Policy Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'General Inquiry', 'Website/App', 'Pricing', 'Coverage Questions', 'Documentation', 'Billing'],
+                data: [3215, 2678, 2145, 1605, 1072, 950, 800, 750, 600, 550],
+                backgroundColor: '#F59E0B'
+            },
+            promoter: {
+                labels: ['Quick Service', 'Helpful Staff', 'Easy Claims', 'Policy Related', 'Good Value', 'Customer Support', 'Online Process', 'Agent Professionalism', 'Fast Turnaround', 'Seamless Experience'],
+                data: [1523, 1087, 870, 522, 348, 300, 280, 250, 200, 180],
+                backgroundColor: '#10B981'
+            }
+        };
+
+        const sentimentChartData = {
+            positive: {
+                labels: ['Policy Related', 'Service Related', 'Claim Related', 'Renewal Related', 'Endorsement Related', 'Customer Support', 'Ease of Use', 'Agent Helpfulness', 'Product Value', 'Online Portal'],
+                data: [2345, 1890, 1567, 1234, 987, 850, 700, 650, 500, 450],
+                colors: Array(10).fill('#10B981')
+            },
+            neutral: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'General Inquiry', 'Pricing', 'Documentation', 'Coverage Info', 'Process Questions', 'System Issues'],
+                data: [3456, 2890, 2234, 1567, 1234, 1100, 950, 800, 750, 600],
+                colors: Array(10).fill('#3B82F6')
+            },
+            negative: {
+                labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Agent Behavior', 'Process Delays', 'Misinformation', 'Payment Issues', 'Communication Gap'],
+                data: [8765, 6543, 4321, 3210, 2567, 2100, 1800, 1500, 1300, 1000],
+                colors: Array(10).fill('#EF4444')
+            }
+        };
+
+        const sentimentChartDataPrevious = {
+            positive: {
+                labels: ['Policy Updates', 'Customer Feedback', 'Claim Settlement', 'Renewal Offers', 'Support Response', 'Ease of Use', 'Agent Assistance', 'Product Satisfaction', 'Online Access', 'Documentation'],
+                data: (() => {
+                    const arr = Array.from({ length: 10 }, () => Math.floor(Math.random() * 3000) + 500);
+                    return arr.sort((a, b) => b - a); // sort descending
+                })(),
+                colors: Array(10).fill('#059669') // slightly different green
+            },
+            neutral: {
+                labels: ['Policy Queries', 'Claim Process', 'Service Timelines', 'Renewal Reminders', 'Pricing Info', 'Documentation', 'System Navigation', 'Coverage Details', 'FAQs', 'Process Info'],
+                data: (() => {
+                    const arr = Array.from({ length: 10 }, () => Math.floor(Math.random() * 3000) + 500);
+                    return arr.sort((a, b) => b - a);
+                })(),
+                colors: Array(10).fill('#2563EB') // slightly different blue
+            },
+            negative: {
+                labels: ['Claim Delays', 'Policy Miscommunication', 'Service Issues', 'Renewal Confusion', 'Agent Behavior', 'Process Gaps', 'Payment Problems', 'Misinformation', 'Communication Lag', 'System Errors'],
+                data: (() => {
+                    const arr = Array.from({ length: 10 }, () => Math.floor(Math.random() * 2000) + 500);
+                    return arr.sort((a, b) => b - a);
+                })(),
+                colors: Array(10).fill('#B91C1C') // slightly different red
+            }
+        };
+
+        // LOB sentiment datasets (current and previous)
+        const lobSentimentChartData = {
+            positive: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [1800, 1500, 1200, 950, 800, 700, 600, 550, 500, 450],
+                colors: Array(10).fill('#10B981')
+            },
+            neutral: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [2600, 2200, 1900, 1500, 1200, 1000, 850, 700, 650, 600],
+                colors: Array(10).fill('#3B82F6')
+            },
+            negative: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [5200, 4300, 3500, 2800, 2400, 2100, 1700, 1400, 1100, 900],
+                colors: Array(10).fill('#EF4444')
+            }
+        };
+
+        const lobSentimentChartDataPrevious = {
+            positive: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [1600, 1400, 1100, 900, 780, 680, 590, 520, 470, 430],
+                colors: Array(10).fill('#059669')
+            },
+            neutral: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [2400, 2000, 1700, 1400, 1100, 950, 820, 680, 640, 580],
+                colors: Array(10).fill('#2563EB')
+            },
+            negative: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [5000, 4100, 3300, 2600, 2200, 1900, 1600, 1350, 1050, 880],
+                colors: Array(10).fill('#B91C1C')
+            }
+        };
+
+        // Insurance channel sentiment datasets (current and previous)
+        const insuranceSentimentChartData = {
+            positive: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [1400, 1200, 1100, 950, 900, 850, 750, 700],
+                colors: Array(8).fill('#10B981')
+            },
+            neutral: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [2100, 1900, 1700, 1500, 1400, 1200, 1000, 900],
+                colors: Array(8).fill('#3B82F6')
+            },
+            negative: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [4300, 3800, 3400, 3000, 2600, 2200, 2000, 1800],
+                colors: Array(8).fill('#EF4444')
+            }
+        };
+
+        const insuranceSentimentChartDataPrevious = {
+            positive: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [1300, 1100, 1000, 900, 850, 800, 700, 650],
+                colors: Array(8).fill('#059669')
+            },
+            neutral: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [2000, 1800, 1600, 1450, 1300, 1150, 950, 850],
+                colors: Array(8).fill('#2563EB')
+            },
+            negative: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [4100, 3600, 3200, 2900, 2500, 2100, 1900, 1700],
+                colors: Array(8).fill('#B91C1C')
+            }
+        };
+
+        const insuranceBifurcationChartData = {
+            positive: {
+                labels: ['Agency', 'Banca', 'Broker'],
+                data: [1400, 1200, 1100],
+                colors: Array(3).fill('#10B981')
+            },
+            neutral: {
+                labels: ['Agency', 'Banca', 'Broker'],
+                data: [2100, 1900, 1700],
+                colors: Array(3).fill('#3B82F6')
+            },
+            negative: {
+                labels: ['Agency', 'Banca', 'Broker'],
+                data: [4300, 3800, 3400],
+                colors: Array(3).fill('#EF4444')
+            }
+        };
+
+        const insuranceBifurcationChartDataPrevious = {
+            positive: {
+                labels: ['Agency', 'Banca', 'Broker'],
+                data: [1300, 1100, 1000],
+                colors: Array(3).fill('#059669')
+            },
+            neutral: {
+                labels: ['Agency', 'Banca', 'Broker'],
+                data: [2000, 1800, 1600],
+                colors: Array(3).fill('#2563EB')
+            },
+            negative: {
+                labels: ['Agency', 'Banca', 'Broker'],
+                data: [4100, 3600, 3200],
+                colors: Array(3).fill('#B91C1C')
+            }
+        };
+
+        // Channel-wise trends data (Sales vs Negative Volume)
+        const channelTrendsData = {
+            agency: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [120, 140, 160, 180, 200, 220],
+                negative: [60, 70, 65, 75, 80, 85]
+            },
+            banca: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [200, 210, 220, 240, 250, 260],
+                negative: [90, 95, 100, 110, 105, 115]
+            },
+            broker: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [80, 90, 100, 120, 130, 140],
+                negative: [40, 45, 42, 50, 55, 58]
+            },
+            direct: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [150, 160, 170, 175, 190, 200],
+                negative: [70, 72, 74, 76, 78, 80]
+            },
+            web: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [90, 100, 120, 140, 160, 170],
+                negative: [35, 40, 45, 48, 52, 56]
+            },
+            aggregator: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [70, 85, 95, 110, 120, 130],
+                negative: [30, 32, 34, 38, 40, 42]
+            },
+            oem: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [100, 110, 125, 135, 145, 160],
+                negative: [45, 48, 50, 52, 54, 60]
+            },
+            posp: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                sales: [60, 75, 80, 95, 110, 120],
+                negative: [25, 28, 30, 34, 36, 40]
+            }
+        };
+
+        let currentChannelKey = 'agency';
+
+        const qrcChartData = {
+            queries: {
+                labels: ['Policy Related', 'Claim Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Website Navigation', 'Contact Info', 'Premium Details', 'Document Request', 'Branch Locations'],
+                data: [3456, 2890, 1567, 1234, 987, 850, 700, 650, 500, 450],
+                colors: Array(10).fill('#3B82F6')
+            },
+            requests: {
+                labels: ['Policy Related', 'Renewal Related', 'Claim Related', 'Endorsement Related', 'Service Related', 'Statement of Account', 'Tax Certificate', 'Change of Address', 'Correction of Name', 'NCB Letter'],
+                data: [2345, 1890, 1567, 1234, 987, 800, 750, 600, 550, 400],
+                colors: Array(10).fill('#10B981')
+            },
+            complaints: {
+                labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'Endorsement Related', 'Agent Conduct', 'Call Wait Time', 'System Errors', 'Misinformation', 'Payment Gateway'],
+                data: [4567, 3456, 2345, 1890, 1567, 1200, 950, 800, 700, 600],
+                colors: Array(10).fill('#EF4444')
+            }
+        };
+
+        const socialData = {
+            labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'General', 'Product Feature', 'Agent Issues', 'Website/App', 'Payment Issues', 'Communication'],
+            data: [6789, 4567, 2134, 1234, 567, 450, 300, 250, 200, 180],
+            colors: ['#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#6B7280', '#10B981', '#DC2626', '#1E40AF', '#D97706', '#059669']
+        };
+
+        const positivityDriversData = {
+            labels: ['Policy Related', 'Service Related', 'Claim Related', 'Renewal Related', 'Endorsement Related'],
+            data: [2345, 1890, 1567, 1234, 987],
+            backgroundColor: '#10B981'
+        };
+
+        const negativityDriversData = {
+            labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'Endorsement Related'],
+            data: [8765, 6543, 4321, 3210, 2567],
+            backgroundColor: '#EF4444'
+        };
+
+        // Previous datasets for driver charts
+        const positivityDriversDataPrevious = {
+            labels: ['Policy Related', 'Service Related', 'Claim Related', 'Renewal Related', 'Endorsement Related'],
+            data: [2100, 1750, 1500, 1200, 900],
+            backgroundColor: '#059669'
+        };
+
+        const negativityDriversDataPrevious = {
+            labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'Endorsement Related'],
+            data: [8200, 6000, 4000, 3000, 2400],
+            backgroundColor: '#B91C1C'
+        };
+
+        // State for driver charts' current/previous mode
+        let negativityDriversMode = 'current';
+        let positivityDriversMode = 'current';
+
+        // Tooltip functions
+        function showTooltip(event, content) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = content;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY + 10) + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.classList.remove('show');
+        }
+
+        // Update function for all data points based on filter
+        function updateDashboard(filterKey) {
+            const data = dataSet[filterKey];
+            currentFilter = filterKey;
+
+            // Update KPI cards
+            document.querySelector('#sentimentCard .kpi-value').textContent = `${data.sentiment.positive}% | ${data.sentiment.neutral}% | ${data.sentiment.negative}%`;
+            document.querySelector('#volumeCard .volume-center-value').textContent = data.sentiment.total.toLocaleString();
+            document.querySelector('#npsCard .kpi-value').textContent = `+${data.nps.score}`;
+            document.querySelector('#npsBreakdown').textContent = '';
+
+            // Update NPS segment percentages
+            document.querySelector('.nps-segment.promoter div:first-child').textContent = `${data.nps.breakdown.promoters}%`;
+            document.querySelector('.nps-segment.passive div:first-child').textContent = `${data.nps.breakdown.passives}%`;
+            document.querySelector('.nps-segment.detractor div:first-child').textContent = `${data.nps.breakdown.detractors}%`;
+
+            // Update Sentiment Bifurcation percentages
+            document.querySelector('.sentiment-card.positive-sent div:first-child').textContent = `${data.sentiment.positive}%`;
+            document.querySelector('.sentiment-card.neutral-sent div:first-child').textContent = `${data.sentiment.neutral}%`;
+            document.querySelector('.sentiment-card.negative-sent div:first-child').textContent = `${data.sentiment.negative}%`;
+
+            // Update Complaint Bifurcation percentages
+            document.querySelector('.qrc-card.queries div:first-child').textContent = `${data.qrc.queries}%`;
+            document.querySelector('.qrc-card.requests div:first-child').textContent = `${data.qrc.requests}%`;
+            document.querySelector('.qrc-card.complaints div:first-child').textContent = `${data.qrc.complaints}%`;
+
+            // Update charts
+            updateSentimentLineChart(data.sentimentTrends);
+            updateNegativityDriversChart();
+            updatePositivityDriversChart();
+            updateNPSChart('detractor');
+            updateSentimentChart('positive');
+            updateQRCChart('queries');
+            updateSocialChart();
+        }
+
+        function updateSentimentLineChart(trends) {
+            sentimentLineChart.data.labels = trends.labels;
+            sentimentLineChart.data.datasets[0].data = trends.positive;
+            sentimentLineChart.data.datasets[1].data = trends.neutral;
+            sentimentLineChart.data.datasets[2].data = trends.negative;
+            sentimentLineChart.update();
+        }
+
+        function updateNegativityDriversChart() {
+            const isExpanded = false; // drivers have single dataset; expansion doesn't change slice vs full
+            const selected = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
+            negativityDriversChart.data.labels = selected.labels;
+            negativityDriversChart.data.datasets[0].data = selected.data;
+            negativityDriversChart.data.datasets[0].backgroundColor = selected.backgroundColor;
+            negativityDriversChart.update();
+        }
+
+        function updatePositivityDriversChart() {
+            const selected = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
+            positivityDriversChart.data.labels = selected.labels;
+            positivityDriversChart.data.datasets[0].data = selected.data;
+            positivityDriversChart.data.datasets[0].backgroundColor = selected.backgroundColor;
+            positivityDriversChart.update();
+        }
+
+        function togglePreviousNegativityDrivers() {
+            negativityDriversMode = (negativityDriversMode === 'current') ? 'previous' : 'current';
+            updateNegativityDriversChart();
+            const btn = document.querySelector("button.chart-toggle-btn[data-chart='negativityDriversChart']");
+            btn.textContent = (negativityDriversMode === 'previous') ? 'View Current Data' : 'View Previous Data';
+        }
+
+        function togglePreviousPositivityDrivers() {
+            positivityDriversMode = (positivityDriversMode === 'current') ? 'previous' : 'current';
+            updatePositivityDriversChart();
+            const btn = document.querySelector("button.chart-toggle-btn[data-chart='positivityDriversChart']");
+            btn.textContent = (positivityDriversMode === 'previous') ? 'View Current Data' : 'View Previous Data';
+        }
+
+        // Add event listeners for filter dropdowns
+        document.getElementById('mainFilter').addEventListener('change', function () {
+            const monthFilter = document.getElementById('monthFilter');
+            monthFilter.disabled = (this.value !== 'custom');
+            monthFilter.value = '';
+            updateDashboard(this.value);
+        });
+
+        document.getElementById('monthFilter').addEventListener('change', function () {
+            if (this.value) {
+                updateDashboard(this.value);
+            }
+        });
+
+        document.getElementById('sentimentCard').addEventListener('mouseenter', function (e) {
+            const data = dataSet[currentFilter].sentiment;
+            const total = dataSet[currentFilter].sentiment.total;
+            const content = `
+                <strong>Sentiment Breakdown by Count:</strong><br>
+                • Positive: ${(total * data.positive / 100).toFixed(0).toLocaleString()} (${data.positive}%)<br>
+                • Neutral: ${(total * data.neutral / 100).toFixed(0).toLocaleString()} (${data.neutral}%)<br>
+                • Negative: ${(total * data.negative / 100).toFixed(0).toLocaleString()} (${data.negative}%)
+            `;
+            showTooltip(e, content);
+        });
+
+        document.getElementById('volumeCard').addEventListener('mouseenter', function (e) {
+            const data = dataSet[currentFilter].volume;
+            const total = dataSet[currentFilter].sentiment.total;
+            const content = `
+                <strong>Volume Breakdown by Count:</strong><br>
+                • Social Media: ${(total * data.social / 100).toFixed(0).toLocaleString()} (${data.social}%)<br>
+                • QRC Tickets: ${(total * data.qrc / 100).toFixed(0).toLocaleString()} (${data.qrc}%)<br>
+                • NPS Responses: ${(total * data.nps / 100).toFixed(0).toLocaleString()} (${data.nps}%)
+            `;
+            showTooltip(e, content);
+        });
+
+        document.getElementById('npsCard').addEventListener('mouseenter', function (e) {
+            const data = dataSet[currentFilter].nps.breakdown;
+            const total = dataSet[currentFilter].sentiment.total * 0.23;
+            const content = `
+                <strong>NPS Calculation:</strong><br>
+                • Promoters (9-10): ${(total * data.promoters / 100).toFixed(0).toLocaleString()} (${data.promoters}%)<br>
+                • Passives (7-8): ${(total * data.passives / 100).toFixed(0).toLocaleString()} (${data.passives}%)<br>
+                • Detractors (0-6): ${(total * data.detractors / 100).toFixed(0).toLocaleString()} (${data.detractors}%)<br><br>
+                <strong>NPS = ${data.promoters}% - ${data.detractors}% = +${dataSet[currentFilter].nps.score}</strong>
+            `;
+            showTooltip(e, content);
+        });
+
+        document.getElementById('activePolicyCard').addEventListener('mouseenter', function (e) {
+            const data = dataSet[currentFilter];
+            const negativeSentiment = data.sentiment.negative;
+            const totalVolume = data.sentiment.total;
+            // Suppose active policies are a constant (or later fetched dynamically)
+            const activePolicies = 120000;
+
+            const negativeCount = Math.round((negativeSentiment / 100) * totalVolume);
+            const ratio = ((negativeCount / activePolicies) * 100).toFixed(2);
+
+            const content = `
+        <strong>Active Policies vs Negative Volume:</strong><br>
+        • Negative Sentiments: ${negativeSentiment}%<br>
+        • Total Volume: ${totalVolume.toLocaleString()}<br>
+        • Active Policies: ${activePolicies.toLocaleString()}<br><br>
+        • <strong>Ratio = ${negativeCount.toLocaleString()} / ${activePolicies.toLocaleString()} = ${ratio}%</strong>
+    `;
+            showTooltip(e, content);
+        });
+
+        document.getElementById('sentimentCard').addEventListener('mouseleave', hideTooltip);
+        document.getElementById('volumeCard').addEventListener('mouseleave', hideTooltip);
+        document.getElementById('npsCard').addEventListener('mouseleave', hideTooltip);
+        document.getElementById('activePolicyCard').addEventListener('mouseleave', hideTooltip);
+
+
+        // Update functions for interactive elements
+        function updateNPSChart(segment) {
+            document.querySelectorAll('.nps-segment').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.nps-segment.${segment}`).classList.add('active');
+
+            const selectedData = npsData[segment];
+            currentNPSData = selectedData;
+            const myChart = Chart.getChart('npsCategoryChart');
+            if (myChart) {
+                // Ensure chart is not in expanded view
+                if (!document.getElementById('npsChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = selectedData.backgroundColor;
+                myChart.update();
+            }
+        }
+
+        // Track state
+        let currentSentimentType = 'positive'; // default
+        let currentMode = 'current'; // 'current' or 'previous'
+
+        // LOB state
+        let currentLOBSentimentType = 'positive';
+        let currentLOBMode = 'current';
+
+        // Insurance state
+        let currentInsuranceSentimentType = 'positive';
+        let currentInsuranceMode = 'current';
+        // Duplicate (bifurcation) insurance state
+        let currentInsuranceBifurcationSentimentType = 'positive';
+        let currentInsuranceBifurcationMode = 'current';
+
+
+        function updateSentimentChart(sentimentType) {
+            currentSentimentType = sentimentType;
+            document.querySelectorAll('.sentiment-card').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.sentiment-card.${sentimentType}-sent`).classList.add('active');
+
+            const selectedData = (currentMode === 'current')
+                ? sentimentChartData[sentimentType]
+                : sentimentChartDataPrevious[sentimentType];
+            currentSentimentData = selectedData;
+            const myChart = Chart.getChart('sentimentCategoryChart');
+            if (myChart) {
+                if (!document.getElementById('sentimentChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = selectedData.colors;
+                myChart.update();
+            }
+        }
+
+        function togglePreviousSentimentChart() {
+            currentMode = (currentMode === 'current') ? 'previous' : 'current'; // toggle mode
+            updateSentimentChart(currentSentimentType); // refresh chart with current sentiment type and mode
+            const btn = document.querySelector('.chart-toggle-btn');
+            if (currentMode === 'previous') {
+                btn.textContent = 'View Current Data';
+            } else {
+                btn.textContent = 'View Previous Data';
+            }
+        }
+
+
+        function updateQRCChart(qrcType) {
+            document.querySelectorAll('.qrc-card').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.qrc-card.${qrcType}`).classList.add('active');
+
+            const selectedData = qrcChartData[qrcType];
+            currentQRCData = selectedData;
+            const myChart = Chart.getChart('qrcCategoryChart');
+            if (myChart) {
+                if (!document.getElementById('qrcChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = selectedData.colors;
+                myChart.update();
+            }
+        }
+
+        function updateSocialChart() {
+            const myChart = Chart.getChart('socialCategoryChart');
+            if (myChart) {
+                if (!document.getElementById('socialChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = socialData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = socialData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = socialData.labels;
+                    myChart.data.datasets[0].data = socialData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = socialData.colors;
+                myChart.update();
+            }
+        }
+
+        // LOB Sentiment chart handlers
+        function updateLOBSentimentChart(sentimentType) {
+            currentLOBSentimentType = sentimentType;
+            document.querySelectorAll('.lob-sentiment-card').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.lob-sentiment-card.${sentimentType}-sent`).classList.add('active');
+
+            const selectedData = (currentLOBMode === 'current')
+                ? lobSentimentChartData[sentimentType]
+                : lobSentimentChartDataPrevious[sentimentType];
+            currentLOBSentimentData = selectedData;
+            const myChart = Chart.getChart('lobSentimentCategoryChart');
+            if (myChart) {
+                if (!document.getElementById('lobSentimentChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = selectedData.colors;
+                myChart.update();
+            }
+        }
+
+        function togglePreviousLOBSentimentChart() {
+            currentLOBMode = (currentLOBMode === 'current') ? 'previous' : 'current';
+            updateLOBSentimentChart(currentLOBSentimentType);
+            const btn = document.querySelector("button.chart-toggle-btn[data-chart='lobSentimentCategoryChart']");
+            if (currentLOBMode === 'previous') {
+                btn.textContent = 'View Current Data';
+            } else {
+                btn.textContent = 'View Previous Data';
+            }
+        }
+
+        // LOB dropdown handler (simple filter demo placeholder)
+        function updateLOBSentimentByLOB(lobKey) {
+            // In this dummy implementation we keep data static; you can branch on lobKey to swap datasets
+            updateLOBSentimentChart(currentLOBSentimentType);
+        }
+
+        // Insurance Sentiment chart handlers
+        function updateInsuranceSentimentChart(sentimentType) {
+            currentInsuranceSentimentType = sentimentType;
+            // toggle active on this section only
+            document.querySelectorAll('#insuranceSentimentSection .lob-sentiment-card').forEach(el => el.classList.remove('active'));
+            document.querySelector(`#insuranceSentimentSection .lob-sentiment-card.${sentimentType}-sent`).classList.add('active');
+
+            const selectedData = (currentInsuranceMode === 'current')
+                ? insuranceSentimentChartData[sentimentType]
+                : insuranceSentimentChartDataPrevious[sentimentType];
+            currentInsuranceSentimentData = selectedData;
+            const myChart = Chart.getChart('insuranceSentimentCategoryChart');
+            if (myChart) {
+                if (!document.getElementById('insuranceSentimentChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = selectedData.colors;
+                myChart.update();
+            }
+        }
+
+        function togglePreviousInsuranceSentimentChart() {
+            currentInsuranceMode = (currentInsuranceMode === 'current') ? 'previous' : 'current';
+            updateInsuranceSentimentChart(currentInsuranceSentimentType);
+            const btn = document.querySelector("button.chart-toggle-btn[data-chart='insuranceSentimentCategoryChart']");
+            if (currentInsuranceMode === 'previous') {
+                btn.textContent = 'View Current Data';
+            } else {
+                btn.textContent = 'View Previous Data';
+            }
+        }
+
+        // Duplicate handlers for the new Insurance Channel Bifurcation chart
+        function updateInsuranceBifurcationChart(sentimentType) {
+            currentInsuranceBifurcationSentimentType = sentimentType;
+            // toggle active on this section only
+            document.querySelectorAll('#insuranceBifurcationSection .lob-sentiment-card').forEach(el => el.classList.remove('active'));
+            document.querySelector(`#insuranceBifurcationSection .lob-sentiment-card.${sentimentType}-sent`).classList.add('active');
+
+            const selectedData = (currentInsuranceBifurcationMode === 'current')
+                ? insuranceBifurcationChartData[sentimentType]
+                : insuranceBifurcationChartDataPrevious[sentimentType];
+            currentInsuranceBifurcationSentimentData = selectedData;
+            const myChart = Chart.getChart('insuranceBifurcationCategoryChart');
+            if (myChart) {
+                if (!document.getElementById('insuranceBifurcationChartWrapper').classList.contains('expanded')) {
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
+                } else {
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
+                }
+                myChart.data.datasets[0].backgroundColor = selectedData.colors;
+                myChart.update();
+            }
+        }
+
+        function togglePreviousInsuranceBifurcationChart() {
+            currentInsuranceBifurcationMode = (currentInsuranceBifurcationMode === 'current') ? 'previous' : 'current';
+            updateInsuranceBifurcationChart(currentInsuranceBifurcationSentimentType);
+            const btn = document.querySelector("button.chart-toggle-btn[data-chart='insuranceBifurcationCategoryChart']");
+            if (currentInsuranceBifurcationMode === 'previous') {
+                btn.textContent = 'View Current Data';
+            } else {
+                btn.textContent = 'View Previous Data';
+            }
+        }
+
+        // Insurance bifurcation dropdown handler
+        function updateInsuranceBifurcationByChannel(channelKey) {
+            // In this dummy implementation we keep data static; you can branch on channelKey to swap datasets
+            updateInsuranceBifurcationChart(currentInsuranceBifurcationSentimentType);
+        }
+
+        // Insurance dropdown handler (simple filter demo placeholder)
+        function updateInsuranceSentimentByChannel(channelKey) {
+            // In this dummy implementation we keep data static; you can branch on channelKey to swap datasets
+            updateInsuranceSentimentChart(currentInsuranceSentimentType);
+        }
+
+        // Channel trend handlers
+        function updateChannelTrendChart(channelKey) {
+            currentChannelKey = channelKey || currentChannelKey;
+            const ch = channelTrendsData[currentChannelKey];
+            const myChart = Chart.getChart('channelTrendLineChart');
+            if (myChart && ch) {
+                myChart.data.labels = ch.labels;
+                myChart.data.datasets[0].data = ch.sales;
+                myChart.data.datasets[1].data = ch.negative;
+                myChart.update();
+            }
+        }
+
+        // Chart expansion logic
+        function toggleExpand(wrapperId, chartId, sourceTitle) {
+            const wrapper = document.getElementById(wrapperId);
+            const myChart = Chart.getChart(chartId);
+            const expandBtn = wrapper.querySelector('.chart-expand-btn');
+
+            if (wrapper.classList.contains('expanded')) {
+                // Collapse
+                wrapper.classList.remove('expanded');
+                expandBtn.textContent = 'Expand';
+                expandBtn.classList.remove('chart-contract-btn');
+                expandedChartId = null;
+
+                let dataToUpdate;
+                if (sourceTitle.includes('NPS')) {
+                    dataToUpdate = currentNPSData;
+                } else if (sourceTitle.includes('Sentiment')) {
+                    dataToUpdate = currentSentimentData;
+                } else if (sourceTitle.includes('QRC')) {
+                    dataToUpdate = currentQRCData;
+                } else if (sourceTitle.includes('Social')) {
+                    dataToUpdate = socialData;
+                } else if (sourceTitle.includes('Positivity')) {
+                    dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
+                } else if (sourceTitle.includes('Negativity')) {
+                    dataToUpdate = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
+                } else {
+                    // Fallback for trend chart
+                    const trends = dataSet[currentFilter].sentimentTrends;
+                    myChart.data.labels = trends.labels;
+                    myChart.data.datasets[0].data = trends.positive;
+                    myChart.data.datasets[1].data = trends.neutral;
+                    myChart.data.datasets[2].data = trends.negative;
+                    myChart.update();
+                    return;
+                }
+
+                myChart.data.labels = dataToUpdate.labels.slice(0, 5);
+                myChart.data.datasets[0].data = dataToUpdate.data.slice(0, 5);
+                if (dataToUpdate.backgroundColor) {
+                    myChart.data.datasets[0].backgroundColor = dataToUpdate.backgroundColor;
+                }
+                myChart.update();
+            } else {
+                // Check if another chart is already expanded
+                if (expandedChartId) {
+                    alert('Please collapse the current chart before expanding another.');
+                    return;
+                }
+
+                // Expand
+                wrapper.classList.add('expanded');
+                expandBtn.textContent = 'Collapse';
+                expandBtn.classList.add('chart-contract-btn');
+                expandedChartId = wrapperId;
+
+                let dataToUpdate;
+                if (sourceTitle.includes('NPS')) {
+                    dataToUpdate = currentNPSData;
+                } else if (sourceTitle.includes('Sentiment')) {
+                    dataToUpdate = currentSentimentData;
+                } else if (sourceTitle.includes('QRC')) {
+                    dataToUpdate = currentQRCData;
+                } else if (sourceTitle.includes('Social')) {
+                    dataToUpdate = socialData;
+                } else if (sourceTitle.includes('Positivity')) {
+                    dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
+                } else if (sourceTitle.includes('Negativity')) {
+                    dataToUpdate = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
+                } else {
+                    // Fallback for trend chart
+                    const trends = dataSet[currentFilter].sentimentTrends;
+                    myChart.data.labels = trends.labels;
+                    myChart.data.datasets[0].data = trends.positive;
+                    myChart.data.datasets[1].data = trends.neutral;
+                    myChart.data.datasets[2].data = trends.negative;
+                    myChart.update();
+                    return;
+                }
+
+                myChart.data.labels = dataToUpdate.labels;
+                myChart.data.datasets[0].data = dataToUpdate.data;
+                if (dataToUpdate.backgroundColor) {
+                    myChart.data.datasets[0].backgroundColor = dataToUpdate.backgroundColor;
+                }
+                myChart.update();
+            }
+        }
+
+        // Side panel functions
+        function openSidePanel(category) {
+            const sidePanel = document.getElementById('sidePanel');
+            const dashboardContainer = document.getElementById('dashboardContainer');
+            const panelTitle = document.getElementById('panelTitle');
+            const panelContent = document.getElementById('panelContent');
+
+            panelTitle.textContent = `${category} Subcategories`;
+            panelContent.innerHTML = '';
+
+            const subcategories = categorySubcategoryData[category];
+            if (subcategories && subcategories.length > 0) {
+                // Sort in descending order of count if objects
+                const sorted = subcategories
+                    .slice()
+                    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+
+                sorted.forEach(sub => {
+                    const li = document.createElement('li');
+                    if (typeof sub === 'object') {
+                        li.innerHTML = `<strong>${sub.name}</strong> — <span style="color:#1E40AF;font-weight:600">${sub.count.toLocaleString()}</span>`;
+                    } else {
+                        li.textContent = sub; // fallback for old format
+                    }
+                    panelContent.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'No subcategories found.';
+                panelContent.appendChild(li);
+            }
+
+            sidePanel.classList.add('open');
+            dashboardContainer.style.transform = 'translateX(-380px)';
+        }
+
+        function closeSidePanel() {
+            const sidePanel = document.getElementById('sidePanel');
+            const dashboardContainer = document.getElementById('dashboardContainer');
+            sidePanel.classList.remove('open');
+            dashboardContainer.style.transform = 'translateX(0)';
+        }
+
+        // Add event listener to chart canvases for side panel functionality
+        function addCanvasClickListeners() {
+            const chartsToListen = ['negativityDriversChart', 'positivityDriversChart', 'npsCategoryChart', 'sentimentCategoryChart', 'qrcCategoryChart', 'socialCategoryChart', 'lobSentimentCategoryChart', 'insuranceSentimentCategoryChart', 'channelTrendLineChart'];
+            chartsToListen.forEach(chartId => {
+                const canvas = document.getElementById(chartId);
+                canvas.onclick = function (event) {
+                    const chart = Chart.getChart(chartId);
+                    const activePoints = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                    if (activePoints.length > 0) {
+                        const firstPoint = activePoints[0];
+                        const label = chart.data.labels[firstPoint.index];
+                        openSidePanel(label);
+                    }
+                };
+            });
+        }
+
+        // Initialize all charts
+        function initializeCharts() {
+            const chartConfigs = [
+                { id: 'volumeMiniChart', type: 'doughnut', data: { labels: ['Social Media', 'QRC Tickets', 'NPS Responses'], datasets: [{ data: [42, 35, 23], backgroundColor: ['#3B82F6', '#8B5CF6', '#F59E0B'], cutout: '50%' }] }, options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'sentimentLineChart', type: 'line', data: { labels: [], datasets: [{ label: 'Positive', data: [], borderColor: '#10B981', tension: 0.3 }, { label: 'Neutral', data: [], borderColor: '#3B82F6', tension: 0.3 }, { label: 'Negative', data: [], borderColor: '#EF4444', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 70 }, x: {} } } },
+                { id: 'negativityDriversChart', type: 'bar', data: { labels: negativityDriversData.labels, datasets: [{ label: 'Count', data: negativityDriversData.data, backgroundColor: negativityDriversData.backgroundColor }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'positivityDriversChart', type: 'bar', data: { labels: positivityDriversData.labels, datasets: [{ label: 'Count', data: positivityDriversData.data, backgroundColor: positivityDriversData.backgroundColor }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'npsCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'sentimentCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'qrcCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'socialCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'lobSentimentCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'insuranceSentimentCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                // Duplicate config for Insurance Channel Bifurcation
+                { id: 'insuranceBifurcationCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
+                { id: 'channelTrendLineChart', type: 'line', data: { labels: [], datasets: [{ label: 'Sales', data: [], borderColor: '#1E40AF', tension: 0.3 }, { label: 'Negative Volume', data: [], borderColor: '#EF4444', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true }, x: {} } } }
+            ];
+
+            chartConfigs.forEach(config => {
+                const ctx = document.getElementById(config.id).getContext('2d');
+                new Chart(ctx, config);
+            });
+
+            volumeMiniChart = Chart.getChart('volumeMiniChart');
+            sentimentLineChart = Chart.getChart('sentimentLineChart');
+            negativityDriversChart = Chart.getChart('negativityDriversChart');
+            positivityDriversChart = Chart.getChart('positivityDriversChart');
+            npsCategoryChart = Chart.getChart('npsCategoryChart');
+            sentimentCategoryChart = Chart.getChart('sentimentCategoryChart');
+            qrcCategoryChart = Chart.getChart('qrcCategoryChart');
+            socialCategoryChart = Chart.getChart('socialCategoryChart');
+            lobSentimentCategoryChart = Chart.getChart('lobSentimentCategoryChart');
+            insuranceSentimentCategoryChart = Chart.getChart('insuranceSentimentCategoryChart');
+            insuranceBifurcationCategoryChart = Chart.getChart('insuranceBifurcationCategoryChart');
+            channelTrendLineChart = Chart.getChart('channelTrendLineChart');
+        }
+
+
+        // Universal chart comparison toggler
+        const comparisonState = {};
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeCharts();
+            updateDashboard('all');
+            addCanvasClickListeners();
+            // Initialize LOB sentiment chart
+            updateLOBSentimentChart('positive');
+            // Initialize Insurance sentiment chart
+            updateInsuranceSentimentChart('positive');
+            // Initialize duplicated Insurance channel bifurcation chart
+            updateInsuranceBifurcationChart('positive');
+            // Initialize Channel trend chart
+            updateChannelTrendChart('agency');
+        });
+    </script>
+</body>
+
+</html>
