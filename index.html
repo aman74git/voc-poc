@@ -204,7 +204,7 @@
         }
 
         .row-4 {
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
         }
 
         .glass-card {
@@ -970,6 +970,16 @@
                 </div>
             </div>
 
+            <div class="glass-card clickable-card" id="npsTrendSection"
+                onclick="toggleExpand('npsTrendWrapper', 'npsTrendLineChart', 'NPS Trendline')">
+                <h3 class="chart-title">NPS Trendline</h3>
+                <div class="chart-wrapper" id="npsTrendWrapper">
+                    <canvas id="npsTrendLineChart"></canvas>
+                    <button class="chart-expand-btn"
+                        onclick="event.stopPropagation(); toggleExpand('npsTrendWrapper', 'npsTrendLineChart', 'NPS Trendline')">Expand</button>
+                </div>
+            </div>
+
             <div class="glass-card source-section" id="qrcSection">
                 <h3 class="source-title">🎫 QRC Bifurcation</h3>
                 <div class="qrc-breakdown">
@@ -1168,8 +1178,8 @@
 
         // Global variables
         let volumeMiniChart, sentimentLineChart, negativityDriversChart, positivityDriversChart;
-        let npsCategoryChart, sentimentCategoryChart, qrcCategoryChart, socialCategoryChart, lobSentimentCategoryChart, insuranceSentimentCategoryChart, insuranceBifurcationCategoryChart, channelTrendLineChart;
-        let currentNPSData, currentSentimentData, currentQRCData, currentLOBSentimentData, currentInsuranceSentimentData, currentInsuranceBifurcationSentimentData;
+        let npsCategoryChart, sentimentCategoryChart, qrcCategoryChart, socialCategoryChart, lobSentimentCategoryChart, insuranceSentimentCategoryChart, insuranceBifurcationCategoryChart, channelTrendLineChart, npsTrendLineChart;
+        let currentNPSData, currentSentimentData, currentQRCData, currentLOBSentimentData, currentInsuranceSentimentData, currentInsuranceBifurcationSentimentData, currentNPSTrendData;
         let expandedChartId = null;
 
         // New, more detailed data structure based on user input
@@ -1782,6 +1792,7 @@
 
             // Update charts
             updateSentimentLineChart(data.sentimentTrends);
+            updateNPSTrendLineChart(data.sentimentTrends);
             updateNegativityDriversChart();
             updatePositivityDriversChart();
             updateNPSChart('detractor');
@@ -1796,6 +1807,16 @@
             sentimentLineChart.data.datasets[1].data = trends.neutral;
             sentimentLineChart.data.datasets[2].data = trends.negative;
             sentimentLineChart.update();
+        }
+
+        function updateNPSTrendLineChart(trends) {
+            currentNPSTrendData = trends;
+            if (!npsTrendLineChart) return;
+            npsTrendLineChart.data.labels = trends.labels;
+            npsTrendLineChart.data.datasets[0].data = trends.positive;
+            npsTrendLineChart.data.datasets[1].data = trends.neutral;
+            npsTrendLineChart.data.datasets[2].data = trends.negative;
+            npsTrendLineChart.update();
         }
 
         function updateNegativityDriversChart() {
@@ -2191,6 +2212,14 @@
                     dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
                 } else if (sourceTitle.includes('Negativity')) {
                     dataToUpdate = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
+                } else if (sourceTitle.includes('NPS Trendline')) {
+                    const trends = currentNPSTrendData || dataSet[currentFilter].sentimentTrends;
+                    myChart.data.labels = trends.labels;
+                    myChart.data.datasets[0].data = trends.positive;
+                    myChart.data.datasets[1].data = trends.neutral;
+                    myChart.data.datasets[2].data = trends.negative;
+                    myChart.update();
+                    return;
                 } else {
                     // Fallback for trend chart
                     const trends = dataSet[currentFilter].sentimentTrends;
@@ -2234,6 +2263,14 @@
                     dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
                 } else if (sourceTitle.includes('Negativity')) {
                     dataToUpdate = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
+                } else if (sourceTitle.includes('NPS Trendline')) {
+                    const trends = currentNPSTrendData || dataSet[currentFilter].sentimentTrends;
+                    myChart.data.labels = trends.labels;
+                    myChart.data.datasets[0].data = trends.positive;
+                    myChart.data.datasets[1].data = trends.neutral;
+                    myChart.data.datasets[2].data = trends.negative;
+                    myChart.update();
+                    return;
                 } else {
                     // Fallback for trend chart
                     const trends = dataSet[currentFilter].sentimentTrends;
@@ -2329,7 +2366,8 @@
                 { id: 'insuranceSentimentCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
                 // Duplicate config for Insurance Channel Bifurcation
                 { id: 'insuranceBifurcationCategoryChart', type: 'bar', data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } },
-                { id: 'channelTrendLineChart', type: 'line', data: { labels: [], datasets: [{ label: 'Sales', data: [], borderColor: '#1E40AF', tension: 0.3 }, { label: 'Negative Volume', data: [], borderColor: '#EF4444', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true }, x: {} } } }
+                { id: 'channelTrendLineChart', type: 'line', data: { labels: [], datasets: [{ label: 'Sales', data: [], borderColor: '#1E40AF', tension: 0.3 }, { label: 'Negative Volume', data: [], borderColor: '#EF4444', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true }, x: {} } } },
+                { id: 'npsTrendLineChart', type: 'line', data: { labels: [], datasets: [{ label: 'Positive', data: [], borderColor: '#10B981', tension: 0.3 }, { label: 'Neutral', data: [], borderColor: '#3B82F6', tension: 0.3 }, { label: 'Negative', data: [], borderColor: '#EF4444', tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 70 }, x: {} } } }
             ];
 
             chartConfigs.forEach(config => {
@@ -2349,6 +2387,7 @@
             insuranceSentimentCategoryChart = Chart.getChart('insuranceSentimentCategoryChart');
             insuranceBifurcationCategoryChart = Chart.getChart('insuranceBifurcationCategoryChart');
             channelTrendLineChart = Chart.getChart('channelTrendLineChart');
+            npsTrendLineChart = Chart.getChart('npsTrendLineChart');
         }
 
 
