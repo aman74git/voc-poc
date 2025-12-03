@@ -776,9 +776,9 @@
             </div>
 
             <div class="glass-card kpi-card info clickable-card" id="activePolicyCard">
-                <div class="kpi-value">30.3%</div>
-                <div class="kpi-label">Active Policies vs -ve Volume</div>
-                <div class="kpi-breakdown">Negative Volume / Active Policies</div>
+                <div class="kpi-value">7000</div>
+                <div class="kpi-label">Active unique sentiments via golden id</div>
+                <!-- <div class="kpi-breakdown">Negative Volume / Active Policies</div> -->
             </div>
 
             <div class="glass-card big-card">
@@ -1009,13 +1009,24 @@
         <div class="row row-4">
             <div class="glass-card source-section" id="lobSentimentSection">
                 <h3 class="source-title">LOB sentiment Bifurcation</h3>
-                <div class="dropdown-container">
-                    <label for="lobDropdown" class="dropdown-label">LOB:</label>
-                    <select id="lobDropdown" class="dropdown" onchange="updateLOBSentimentByLOB(this.value)">
-                        <option value="health">Health</option>
-                        <option value="health">Motor</option>
-                        <option value="travel">Travel</option>
-                    </select>
+                <div style="display: flex; justify-content: flex-start; gap: 16px; align-items: center;">
+                    <div class="dropdown-container">
+                        <label for="lobDropdown" class="dropdown-label">LOB:</label>
+                        <select id="lobDropdown" class="dropdown" onchange="updateLOBSentimentByLOB(this.value)">
+                            <option value="health">Health</option>
+                            <option value="health">Motor</option>
+                            <option value="travel">Travel</option>
+                        </select>
+                    </div>
+                    <div class="dropdown-container">
+                        <label for="insuranceChannelDropdown" class="dropdown-label">Channel:</label>
+                        <select id="insuranceChannelDropdown" class="dropdown"
+                            onchange="updateInsuranceSentimentByChannel(this.value)">
+                            <option value="agency">Agency</option>
+                            <option value="banca">Banca</option>
+                            <option value="broker">Broker</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="sentiment-breakdown">
                     <div class="lob-sentiment-card positive-sent active" onclick="updateLOBSentimentChart('positive')">
@@ -1041,7 +1052,7 @@
                     View Previous Data
                 </button>
             </div>
-            <div class="glass-card source-section" id="insuranceSentimentSection">
+            <div class="glass-card source-section" id="insuranceSentimentSection" style="display: none;">
                 <h3 class="source-title">Insurance Channel Sentiment Bifurcation</h3>
                 <div class="dropdown-container">
                     <label for="insuranceChannelDropdown" class="dropdown-label">Channel:</label>
