@@ -999,6 +999,20 @@
 
             <div class="glass-card source-section" id="socialSection">
                 <h3 class="source-title">📱 Social Media</h3>
+                <div class="sentiment-breakdown">
+                    <div class="lob-sentiment-card positive-sent active" onclick="updateSocialChart('positive')">
+                        <div>32%</div>
+                        <div>Positive</div>
+                    </div>
+                    <div class="lob-sentiment-card neutral-sent" onclick="updateSocialChart('neutral')">
+                        <div>38%</div>
+                        <div>Neutral</div>
+                    </div>
+                    <div class="lob-sentiment-card negative-sent" onclick="updateSocialChart('negative')">
+                        <div>30%</div>
+                        <div>Negative</div>
+                    </div>
+                </div>
                 <div class="chart-wrapper short" id="socialChartWrapper">
                     <canvas id="socialCategoryChart"></canvas>
                     <button class="chart-expand-btn"
@@ -1679,10 +1693,22 @@
             }
         };
 
-        const socialData = {
-            labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'General', 'Product Feature', 'Agent Issues', 'Website/App', 'Payment Issues', 'Communication'],
-            data: [6789, 4567, 2134, 1234, 567, 450, 300, 250, 200, 180],
-            colors: ['#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#6B7280', '#10B981', '#DC2626', '#1E40AF', '#D97706', '#059669']
+        const socialChartData = {
+            positive: {
+                labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'General', 'Product Feature', 'Agent Issues', 'Website/App', 'Payment Issues', 'Communication'],
+                data: [3200, 2600, 1800, 1200, 850, 640, 520, 430, 320, 260],
+                colors: Array(10).fill('#10B981')
+            },
+            neutral: {
+                labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'General', 'Product Feature', 'Agent Issues', 'Website/App', 'Payment Issues', 'Communication'],
+                data: [4500, 3600, 2500, 1500, 1100, 900, 700, 560, 420, 360],
+                colors: Array(10).fill('#3B82F6')
+            },
+            negative: {
+                labels: ['Claim Related', 'Policy Related', 'Service Related', 'Renewal Related', 'General', 'Product Feature', 'Agent Issues', 'Website/App', 'Payment Issues', 'Communication'],
+                data: [5200, 4300, 3100, 2100, 1500, 1100, 900, 760, 620, 540],
+                colors: Array(10).fill('#EF4444')
+            }
         };
 
         const positivityDriversData = {
@@ -1761,7 +1787,7 @@
             updateNPSChart('detractor');
             updateSentimentChart('positive');
             updateQRCChart('queries');
-            updateSocialChart();
+            updateSocialChart(currentSocialSentimentType);
         }
 
         function updateSentimentLineChart(trends) {
@@ -1917,6 +1943,9 @@
         let currentInsuranceBifurcationSentimentType = 'positive';
         let currentInsuranceBifurcationMode = 'current';
 
+        let currentSocialSentimentType = 'positive';
+        let currentSocialData;
+
 
         function updateSentimentChart(sentimentType) {
             currentSentimentType = sentimentType;
@@ -1973,17 +2002,27 @@
             }
         }
 
-        function updateSocialChart() {
+        function updateSocialChart(sentimentType) {
+            currentSocialSentimentType = sentimentType || currentSocialSentimentType;
+            const cards = document.querySelectorAll('#socialSection .lob-sentiment-card');
+            cards.forEach(el => el.classList.remove('active'));
+            const activeCard = document.querySelector(`#socialSection .lob-sentiment-card.${currentSocialSentimentType}-sent`);
+            if (activeCard) {
+                activeCard.classList.add('active');
+            }
+
+            const selectedData = socialChartData[currentSocialSentimentType];
+            currentSocialData = selectedData;
             const myChart = Chart.getChart('socialCategoryChart');
             if (myChart) {
                 if (!document.getElementById('socialChartWrapper').classList.contains('expanded')) {
-                    myChart.data.labels = socialData.labels.slice(0, 5);
-                    myChart.data.datasets[0].data = socialData.data.slice(0, 5);
+                    myChart.data.labels = selectedData.labels.slice(0, 5);
+                    myChart.data.datasets[0].data = selectedData.data.slice(0, 5);
                 } else {
-                    myChart.data.labels = socialData.labels;
-                    myChart.data.datasets[0].data = socialData.data;
+                    myChart.data.labels = selectedData.labels;
+                    myChart.data.datasets[0].data = selectedData.data;
                 }
-                myChart.data.datasets[0].backgroundColor = socialData.colors;
+                myChart.data.datasets[0].backgroundColor = selectedData.colors;
                 myChart.update();
             }
         }
@@ -2147,7 +2186,7 @@
                 } else if (sourceTitle.includes('QRC')) {
                     dataToUpdate = currentQRCData;
                 } else if (sourceTitle.includes('Social')) {
-                    dataToUpdate = socialData;
+                    dataToUpdate = currentSocialData || socialChartData[currentSocialSentimentType];
                 } else if (sourceTitle.includes('Positivity')) {
                     dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
                 } else if (sourceTitle.includes('Negativity')) {
@@ -2190,7 +2229,7 @@
                 } else if (sourceTitle.includes('QRC')) {
                     dataToUpdate = currentQRCData;
                 } else if (sourceTitle.includes('Social')) {
-                    dataToUpdate = socialData;
+                    dataToUpdate = currentSocialData || socialChartData[currentSocialSentimentType];
                 } else if (sourceTitle.includes('Positivity')) {
                     dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
                 } else if (sourceTitle.includes('Negativity')) {
