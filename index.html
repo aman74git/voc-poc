@@ -970,13 +970,10 @@
                 </div>
             </div>
 
-            <div class="glass-card clickable-card" id="npsTrendSection"
-                onclick="toggleExpand('npsTrendWrapper', 'npsTrendLineChart', 'NPS Trendline')">
+            <div class="glass-card" id="npsTrendSection">
                 <h3 class="chart-title">NPS Trendline</h3>
                 <div class="chart-wrapper" id="npsTrendWrapper">
                     <canvas id="npsTrendLineChart"></canvas>
-                    <button class="chart-expand-btn"
-                        onclick="event.stopPropagation(); toggleExpand('npsTrendWrapper', 'npsTrendLineChart', 'NPS Trendline')">Expand</button>
                 </div>
             </div>
 
@@ -2210,14 +2207,6 @@
                     dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
                 } else if (sourceTitle.includes('Negativity')) {
                     dataToUpdate = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
-                } else if (sourceTitle.includes('NPS Trendline')) {
-                    const trends = currentNPSTrendData || dataSet[currentFilter].sentimentTrends;
-                    myChart.data.labels = trends.labels;
-                    myChart.data.datasets[0].data = trends.positive;
-                    myChart.data.datasets[1].data = trends.neutral;
-                    myChart.data.datasets[2].data = trends.negative;
-                    myChart.update();
-                    return;
                 } else {
                     // Fallback for trend chart
                     const trends = dataSet[currentFilter].sentimentTrends;
@@ -2261,14 +2250,6 @@
                     dataToUpdate = (positivityDriversMode === 'current') ? positivityDriversData : positivityDriversDataPrevious;
                 } else if (sourceTitle.includes('Negativity')) {
                     dataToUpdate = (negativityDriversMode === 'current') ? negativityDriversData : negativityDriversDataPrevious;
-                } else if (sourceTitle.includes('NPS Trendline')) {
-                    const trends = currentNPSTrendData || dataSet[currentFilter].sentimentTrends;
-                    myChart.data.labels = trends.labels;
-                    myChart.data.datasets[0].data = trends.positive;
-                    myChart.data.datasets[1].data = trends.neutral;
-                    myChart.data.datasets[2].data = trends.negative;
-                    myChart.update();
-                    return;
                 } else {
                     // Fallback for trend chart
                     const trends = dataSet[currentFilter].sentimentTrends;
